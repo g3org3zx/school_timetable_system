@@ -1,24 +1,28 @@
-<?php
-include "config/db.php";
+<?php include "config/db.php"; ?>
+<?php include "header.php"; ?>
 
-echo "<h1 style='text-align:center; color:#2c3e50;'>School Timetable System</h1>";
-echo "<div style='text-align:center; font-size:1.3em; margin:30px;'>";
+<h1>Welcome to the School Timetable System</h1>
 
-if ($conn) {
-    echo "<p style='color:green; font-weight:bold;'>✅ Database connection successful!</p>";
+<?php if ($conn): ?>
+    <p class="success">✅ Database is connected and ready.</p>
     
-    // Quick proof: count rows in teachers table
-    $result = mysqli_query($conn, "SELECT COUNT(*) as total FROM teachers");
-    $row = mysqli_fetch_assoc($result);
-    echo "<p>Teachers in database right now: <strong>" . $row['total'] . "</strong></p>";
+    <ul style="font-size:1.2em; line-height:1.8;">
+        <li>Teachers in system: <strong><?php 
+            $r = mysqli_query($conn, "SELECT COUNT(*) as c FROM teachers"); 
+            $row = mysqli_fetch_assoc($r); 
+            echo $row['c']; 
+        ?></strong></li>
+        
+        <li>Classes in system: <strong><?php 
+            $r = mysqli_query($conn, "SELECT COUNT(*) as c FROM classes"); 
+            $row = mysqli_fetch_assoc($r); 
+            echo $row['c']; 
+        ?></strong></li>
+    </ul>
     
-    // Same for other tables (just for fun)
-    $result = mysqli_query($conn, "SELECT COUNT(*) as total FROM classes");
-    $row = mysqli_fetch_assoc($result);
-    echo "<p>Classes in database: <strong>" . $row['total'] . "</strong></p>";
-} else {
-    echo "<p style='color:red; font-weight:bold;'>❌ Connection failed!</p>";
-}
+    <p>Start by going to <a href="teachers.php">Manage Teachers</a></p>
+<?php else: ?>
+    <p class="error">❌ Cannot connect to database. Check config/db.php</p>
+<?php endif; ?>
 
-echo "</div>";
-?>
+<?php include "footer.php"; ?>
