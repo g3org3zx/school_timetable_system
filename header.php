@@ -20,9 +20,12 @@
 <header>
     <h2>School Timetable Management System</h2>
     <nav>
-        <a href="index.php">Home</a>
-        <a href="teachers.php">Teachers</a>
-        <!-- We'll add more links later: Classes, Rooms, Timetable, etc. -->
+<nav>
+    <a href="index.php">Home</a>
+    <a href="teachers.php">Teachers</a>
+    <a href="classes.php">Classes</a>
+    <!-- More links coming soon -->
+</nav>
     </nav>
 </header>
 
