@@ -2,7 +2,7 @@
 include "config/db.php"; 
 include "header.php"; 
 
-// Handle form submission - Add new timetable entry
+// Handle form submission with conflict detection
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_entry'])) {
     $class_id   = (int)$_POST['class_id'];
     $subject_id = (int)$_POST['subject_id'];
@@ -12,31 +12,73 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_entry'])) {
     $start      = $_POST['start_time'];
     $end        = $_POST['end_time'];
 
-    try {
-        $sql = "INSERT INTO timetable 
-                (class_id, subject_id, teacher_id, room_id, day_of_week, start_time, end_time) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "iiiisss", $class_id, $subject_id, $teacher_id, $room_id, $day, $start, $end);
-        
-        if (mysqli_stmt_execute($stmt)) {
-            echo "<p class='success'>✅ Timetable entry added successfully!</p>";
-        } else {
-            throw new Exception(mysqli_error($conn));
+    // === CONFLICT CHECKS ===
+    $conflicts = [];
+
+    // 1. Teacher conflict
+    $sql = "SELECT * FROM timetable 
+            WHERE teacher_id = ? 
+            AND day_of_week = ? 
+            AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "isssss", $teacher_id, $day, $end, $start, $start, $end);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->num_rows > 0) {
+        $conflicts[] = "Teacher is already scheduled at this time on " . $day;
+    }
+    mysqli_stmt_close($stmt);
+
+    // 2. Room conflict
+    $sql = "SELECT * FROM timetable 
+            WHERE room_id = ? 
+            AND day_of_week = ? 
+            AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "isssss", $room_id, $day, $end, $start, $start, $end);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->num_rows > 0) {
+        $conflicts[] = "Room is already booked at this time on " . $day;
+    }
+    mysqli_stmt_close($stmt);
+
+    // 3. Class conflict
+    $sql = "SELECT * FROM timetable 
+            WHERE class_id = ? 
+            AND day_of_week = ? 
+            AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "isssss", $class_id, $day, $end, $start, $start, $end);
+    mysqli_stmt_execute($stmt);
+    if (mysqli_stmt_get_result($stmt)->num_rows > 0) {
+        $conflicts[] = "Class already has a lesson at this time on " . $day;
+    }
+    mysqli_stmt_close($stmt);
+
+    if (!empty($conflicts)) {
+        echo "<p class='error'><strong>Conflict detected!</strong><br>";
+        foreach ($conflicts as $c) {
+            echo "• " . $c . "<br>";
         }
-    } catch (Exception $e) {
-        $errorMsg = $e->getMessage();
-        $errorCode = mysqli_errno($conn);
-        
-        if ($errorCode === 1062) {
-            echo "<p class='error'>❌ Duplicate timetable entry detected (same class/time conflict?).</p>";
-        } else {
-            echo "<p class='error'>❌ Error: " . htmlspecialchars($errorMsg) . "</p>";
+        echo "</p>";
+    } else {
+        // No conflicts → insert
+        try {
+            $sql = "INSERT INTO timetable 
+                    (class_id, subject_id, teacher_id, room_id, day_of_week, start_time, end_time) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "iiiisss", $class_id, $subject_id, $teacher_id, $room_id, $day, $start, $end);
+            
+            if (mysqli_stmt_execute($stmt)) {
+                echo "<p class='success'>✅ Lesson added successfully! No conflicts.</p>";
+            } else {
+                throw new Exception(mysqli_error($conn));
+            }
+            mysqli_stmt_close($stmt);
+        } catch (Exception $e) {
+            echo "<p class='error'>❌ Error: " . htmlspecialchars($e->getMessage()) . "</p>";
         }
     }
-    
-    if (isset($stmt)) mysqli_stmt_close($stmt);
 }
 ?>
 
@@ -44,6 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_entry'])) {
 
 <h2>Add New Lesson</h2>
 <form method="post" style="max-width:700px; margin-bottom:50px; background:#fff; padding:20px; border-radius:8px;">
+    <!-- Same form as before (class, subject, teacher, room, day, start time, end time) -->
     <p>
         <label>Class <span style="color:red;">*</span></label><br>
         <select name="class_id" required style="width:100%; padding:8px;">
@@ -157,7 +200,7 @@ if (mysqli_num_rows($result) > 0) {
     }
     echo "</table>";
 } else {
-    echo "<p>No timetable entries yet. Add some above!</p>";
+    echo "<p>No timetable entries yet.</p>";
 }
 ?>
 
