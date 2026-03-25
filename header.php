@@ -28,6 +28,7 @@
     <a href="classes.php">Classes</a>
     <a href="rooms.php">Rooms</a>
     <a href="subjects.php">Subjects</a>
+    <a href="timetable.php">Timetable</a>
 </nav>
     <!-- Subjects and Timetable coming next -->
 </nav>
