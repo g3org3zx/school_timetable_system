@@ -21,10 +21,13 @@
     <h2>School Timetable Management System</h2>
     <nav>
 <nav>
+<nav>
     <a href="index.php">Home</a>
     <a href="teachers.php">Teachers</a>
     <a href="classes.php">Classes</a>
-    <!-- More links coming soon -->
+    <a href="rooms.php">Rooms</a>
+    <!-- Subjects and Timetable coming next -->
+</nav>
 </nav>
     </nav>
 </header>
