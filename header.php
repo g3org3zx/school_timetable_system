@@ -22,10 +22,13 @@
     <nav>
 <nav>
 <nav>
+<nav>
     <a href="index.php">Home</a>
     <a href="teachers.php">Teachers</a>
     <a href="classes.php">Classes</a>
     <a href="rooms.php">Rooms</a>
+    <a href="subjects.php">Subjects</a>
+</nav>
     <!-- Subjects and Timetable coming next -->
 </nav>
 </nav>
